@@ -30,8 +30,28 @@ pub fn is_file_exists(file_path: &str) -> Result<(), String> {
     return Err(IS_NOT_EXISTS.to_string());
 }
 
+pub struct TextCounters {
+    lines_count: usize,
+    words_count: usize,
+    chars_count: usize,
+}
+
+impl TextCounters {
+    pub fn lines_count(&self) -> usize {
+        self.lines_count
+    }
+
+    pub fn words_count(&self) -> usize {
+        self.words_count
+    }
+
+    pub fn chars_count(&self) -> usize {
+        self.chars_count
+    }
+}
+
 // Вынес в отдельный метод для возможности переиспользования
-pub fn calc_file_counters(file_path: &str) -> Result<String, String> {
+pub fn read_file_content(file_path: &str) -> Result<String, String> {
     let mut file_contents = String::new();
 
     let file = match File::open(file_path) {
@@ -44,22 +64,20 @@ pub fn calc_file_counters(file_path: &str) -> Result<String, String> {
         Err(_) => return Err(UNABLE_TO_READ.to_string()),
     }
 
-    let lines = file_contents.lines().count();
+    Ok(file_contents)
+}
 
-    file_contents = file_contents.replace("\n", " ");
+// Вынес в отдельный метод для возможности переиспользования
+pub fn calc_text_counters(text: &str) -> Result<TextCounters, String> {
+    let lines_count = text.lines().count();
+    let words_count = text.split_whitespace().count();
+    let chars_count = text.chars().count();
 
-    let words = file_contents.split(" ").filter(|ch| *ch != "").count();
-
-    let chars = file_contents
-        .replace(" ", "")
-        .split("")
-        .filter(|ch| *ch != "")
-        .count();
-
-    return Ok(format!(
-        "Words: {}\nLines: {}\nCharacters: {}",
-        words, lines, chars
-    ));
+    return Ok(TextCounters {
+        lines_count,
+        words_count,
+        chars_count,
+    });
 }
 
 #[cfg(test)]
@@ -79,17 +97,35 @@ mod tests {
     }
 
     #[test]
-    fn calc_file_counters_can_read() {
-        let result = calc_file_counters("./src/test.txt");
-        assert_eq!(
-            result,
-            Ok("Words: 50\nLines: 4\nCharacters: 287".to_string())
-        );
+    fn read_file_content_can_read() {
+        let result = read_file_content("./src/test.txt");
+        assert!(result.is_ok());
     }
 
     #[test]
-    fn calc_file_counters_cant_read() {
-        let result = calc_file_counters("./src/text.tst");
-        assert_eq!(result, Err(UNABLE_TO_OPEN.to_string()));
+    fn read_file_content_cant_read() {
+        let result = read_file_content("./src/text.tst");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn calc_text_counters_test() -> Result<(), String> {
+        let file_content = read_file_content("./src/test.txt")?;
+        let result = calc_text_counters(&file_content);
+
+        assert!(result.is_ok());
+
+        let text_counters = result?;
+
+        assert_eq!(
+            (
+                text_counters.lines_count(),
+                text_counters.words_count(),
+                text_counters.chars_count()
+            ),
+            (4, 50, 340)
+        );
+
+        Ok(())
     }
 }

@@ -5,9 +5,16 @@ fn main() -> Result<(), String> {
 
     is_file_exists(&file_path)?;
 
-    let file_counters = calc_file_counters(&file_path)?;
+    let file_content = read_file_content(&file_path)?;
 
-    println!("{}", file_counters);
+    let file_counters = calc_text_counters(&file_content)?;
+
+    println!(
+        "Words: {} Lines: {} Characters: {}",
+        file_counters.lines_count(),
+        file_counters.words_count(),
+        file_counters.chars_count()
+    );
 
     return Ok(());
 }
